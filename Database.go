@@ -22,12 +22,25 @@ const (
 	);`
 	drop            = "DROP TABLE IF EXISTS time;"
 	selectWhereDate = "SELECT time FROM time WHERE date = ?;"
+	selectAll       = "SELECT * FROM time;"
 	insertWhereDate = "INSERT INTO time(date, time) VALUES(?, ?);"
 	updateWhereDate = "UPDATE time SET time = ? WHERE date = ?;"
 )
 
+// Struct for extracting all the values in an database time entry.
+type TimeEntry struct {
+	// Unsigned integer representing the unique id of the entry.
+	id uint
+	// Date value formatted as string.
+	date string
+	// The total seconds of the recorded time.
+	time uint
+}
+
+// Package-wide variable for interaction with database.
 var database *sql.DB
 
+// Connects or creates database. Assigns values to package-wide database variable.
 func connectDatabase() {
 	defer logTime("Connect database")()
 
@@ -44,6 +57,7 @@ func connectDatabase() {
 	database = db
 }
 
+// Drops the table "time".
 func dropTable() {
 	defer logTime("Drop table")()
 	out("Dropping table")
@@ -53,6 +67,7 @@ func dropTable() {
 	out("Table Dropped")
 }
 
+// Create the table "time"
 func createTable() {
 	defer logTime("Create table")()
 	out("Creating table")
@@ -61,13 +76,26 @@ func createTable() {
 	out("Table created")
 }
 
-func getAllTimes() string {
+// Returns all entries in "time" as TimeEntry slice.
+func getAllTimes() []TimeEntry {
 	defer logTime("Get all times")()
 	out("Fecthing all times")
 
-	return ""
+	rows, err := database.Query(selectAll)
+	checkErr(err)
+
+	var rowSlice []TimeEntry
+	for rows.Next() {
+		var r TimeEntry
+		rows.Scan(&r.id, &r.date, &r.time)
+		rowSlice = append(rowSlice, r)
+	}
+
+	out("Fetched all times")
+	return rowSlice
 }
 
+// Using a formatted date string the total seconds of a recorded time is returned for that specific date.
 func selectTime(dateStr string) (uint, error) {
 	defer logTime("Select time")()
 	out("Fetching time")
@@ -90,6 +118,7 @@ func selectTime(dateStr string) (uint, error) {
 	return row, nil
 }
 
+// Either updates or inserts passed seconds value in database.
 func insertTime(recordedTime uint) {
 	defer logTime("Insert time")()
 	out("Inserting time")

@@ -29,6 +29,7 @@ const (
 	pause - Pauses timer
 	resume - Resumes timer after pausing
 	reveal - shows current time
+	times - prints all stored times
 	debug - toggle debug mode
 	`
 )
@@ -41,16 +42,21 @@ var (
 	pauseChan    = make(chan bool, 1)
 	mu           sync.RWMutex
 
+	// Whether the timer is actively running.
 	running = false
-	paused  = false
+
+	// Whether the timer is paused.
+	paused = false
 )
 
+// Scans text input and returns string value.
 func in() string {
 	var input string
 	fmt.Scanln(&input)
 	return strings.ToLower(input)
 }
 
+// Starts timer as a seperate go routine.
 func startTimer() {
 	mu.Lock()
 	if running {
@@ -93,6 +99,7 @@ func startTimer() {
 	}()
 }
 
+// Stops timer and closes channel.
 func stopTimer() {
 	mu.Lock()
 	if !running {
@@ -157,6 +164,7 @@ func savePrompt() {
 	}
 }
 
+// Prompts users if they want to stop the timer (if its running) & save.
 func saveTimer() {
 	var message string
 	var state string
@@ -175,6 +183,13 @@ func saveTimer() {
 		savePrompt()
 	} else {
 		fmt.Println("Timer remains ", state)
+	}
+}
+
+func printALlTimes() {
+	for _, r := range getAllTimes() {
+		rTime := MyTime{seconds: r.time}
+		fmt.Printf("Date: %s Time: %s\n", r.date, rTime.toString())
 	}
 }
 
@@ -204,6 +219,8 @@ func main() {
 			fmt.Println("Debug mode", printDebug)
 		case "save":
 			saveTimer()
+		case "times":
+			printALlTimes()
 		default:
 			fmt.Println(invalid)
 		}
