@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -239,6 +240,8 @@ func main() {
 			checkErr(printALlTimes())
 		case "search":
 			search()
+		case "exit":
+			os.Exit(0)
 		default:
 			fmt.Println(messages.Invalid)
 		}

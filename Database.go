@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+	"timer/sqlDebug"
+	"timer/sqlTime"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -11,20 +13,6 @@ import (
 const (
 	path   = "./database.db"
 	driver = "sqlite3"
-)
-
-const (
-	create = `
-	CREATE TABLE IF NOT EXISTS time(
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		date TEXT UNIQUE,
-		time INTEGER
-	);`
-	drop            = "DROP TABLE IF EXISTS time;"
-	selectWhereDate = "SELECT time FROM time WHERE date = ?;"
-	selectAll       = "SELECT * FROM time;"
-	insertWhereDate = "INSERT INTO time(date, time) VALUES(?, ?);"
-	updateWhereDate = "UPDATE time SET time = ? WHERE date = ?;"
 )
 
 // Struct for extracting all the values in an database time entry.
@@ -58,12 +46,57 @@ func connectDatabase() error {
 	return nil
 }
 
+func checkDebugMode() (bool, error) {
+	defer logTime("Check degbug mode value")()
+	out("Fetching stored debug mode value")
+	defer out("Fetched stored debug mode value")
+
+	_, err := database.Exec(sqlDebug.Create)
+	if err != nil {
+		return false, err
+	}
+
+	rows, err := database.Query(sqlDebug.Select)
+	if err != nil {
+		return false, err
+	}
+
+	defer rows.Close()
+
+	if !rows.Next() {
+		_, err = database.Exec(sqlDebug.Insert, printDebug)
+		return printDebug, nil
+	}
+
+	var d bool
+	for rows.Next() {
+		err = rows.Scan(&d)
+		if err != nil {
+			return false, nil
+		}
+	}
+	return d, nil
+}
+
+func updateDebugMode(val bool) error {
+	defer logTime("Update debug mode")()
+	out("Updating stored debug mode")
+	defer out("Updated stored debug mode")
+
+	_, err := database.Exec(sqlDebug.Update, val)
+	if err != nil {
+		return err
+	}
+	printDebug = val
+	return nil
+}
+
 // Drops the table "time".
 func dropTable() error {
 	defer logTime("Drop table")()
 	out("Dropping table")
 
-	_, err := database.Exec(drop)
+	_, err := database.Exec(sqlTime.Drop)
 	out("Table Dropped")
 	return err
 }
@@ -72,7 +105,7 @@ func dropTable() error {
 func createTable() error {
 	defer logTime("Create table")()
 	out("Creating table")
-	_, err := database.Exec(create)
+	_, err := database.Exec(sqlTime.Create)
 	out("Table created")
 
 	return err
@@ -83,7 +116,7 @@ func getAllTimes() ([]TimeEntry, error) {
 	defer logTime("Get all times")()
 	out("Fecthing all times")
 
-	rows, err := database.Query(selectAll)
+	rows, err := database.Query(sqlTime.SelectAll)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +147,7 @@ func selectTime(dateStr string) (uint, error) {
 	defer logTime("Select time")()
 	out("Fetching time")
 
-	rows, err := database.Query(selectWhereDate, dateStr)
+	rows, err := database.Query(sqlTime.SelectWhere, dateStr)
 	if err != nil {
 		return 0, err
 	}
@@ -147,14 +180,14 @@ func insertTime(recordedTime uint) error {
 
 	if err != nil {
 		out("Inserting new record")
-		_, err = database.Exec(insertWhereDate, dateStr, recordedTime)
+		_, err = database.Exec(sqlTime.Insert, dateStr, recordedTime)
 		if err != nil {
 			return err
 		}
 		out("Inserted new record")
 	} else {
 		out("Updating previous record")
-		_, err = database.Exec(updateWhereDate, dateStr, previousTime+recordedTime)
+		_, err = database.Exec(sqlTime.Update, dateStr, previousTime+recordedTime)
 		if err != nil {
 			return err
 		}
