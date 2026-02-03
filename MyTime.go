@@ -38,6 +38,13 @@ func (t *MyTime) inc() {
 	t.seconds++
 }
 
+// Returns seconds value
+func (t *MyTime) getSec() uint {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	return t.seconds
+}
+
 // Returns the seconds value to 0.
 func (t *MyTime) reset() {
 	defer logTime("Reset time")()

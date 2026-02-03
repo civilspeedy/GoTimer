@@ -5,33 +5,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"timer/messages"
 )
 
 const (
-	tickerLength         = 1 * time.Second
-	startMessage         = "Timer started."
-	pauseMessage         = "Timer paused."
-	resumeMessage        = "Timer resumed."
-	stopMessage          = "Timer stopped."
-	alreadyMessage       = "Timer already started."
-	noTimerMessage       = "No active timer."
-	alreadyPausedMessage = "Time already paused."
-	notPausedMessage     = "Timer not paused."
-	pausedCantStart      = "Timer paused, enter 'stop' to clear current timer or 'resume' to continue current"
-	invalid              = "Invalid command, enter 'help' to see commands."
-	stillRunning         = "Timer still running"
-	wantToStop           = "Do you want to stop? (y/n)"
-	wantToSave           = "Do you want to save time? (y/n)"
-	addingTime           = "Adding time to database"
-	commandHelp          = `
-	start - Starts timer
-	stop - Stops timer & prints final time
-	pause - Pauses timer
-	resume - Resumes timer after pausing
-	reveal - shows current time
-	times - prints all stored times
-	debug - toggle debug mode
-	`
+	tickerLength time.Duration = 1 * time.Second
+	dateTemplate string        = "dd/mm/yyyy"
 )
 
 var (
@@ -61,49 +40,49 @@ func startTimer() {
 	mu.Lock()
 	if running {
 		if paused {
-			fmt.Println(pausedCantStart)
+			fmt.Println(messages.PausedCantStart)
 		} else {
-			fmt.Println(alreadyMessage)
+			fmt.Println(messages.AlreadyStarted)
 		}
 		mu.Unlock()
-		return
-	}
+	} else {
+		fmt.Println(messages.Start)
 
-	fmt.Println(startMessage)
-	running = true
-	paused = false
-	stopChan = make(chan struct{})
-	mu.Unlock()
+		running = true
+		paused = false
+		stopChan = make(chan struct{})
+		mu.Unlock()
 
-	go func() {
-		ticker := time.NewTicker(tickerLength)
-		defer ticker.Stop()
+		go func() {
+			ticker := time.NewTicker(tickerLength)
+			defer ticker.Stop()
 
-		for {
-			select {
-			case <-ticker.C:
-				mu.RLock()
-				isPaused := paused
-				mu.RUnlock()
-				if !isPaused {
-					timer.inc()
+			for {
+				select {
+				case <-ticker.C:
+					mu.RLock()
+					isPaused := paused
+					mu.RUnlock()
+					if !isPaused {
+						timer.inc()
+					}
+				case p := <-pauseChan:
+					mu.Lock()
+					paused = p
+					mu.Unlock()
+				case <-stopChan:
+					return
 				}
-			case p := <-pauseChan:
-				mu.Lock()
-				paused = p
-				mu.Unlock()
-			case <-stopChan:
-				return
 			}
-		}
-	}()
+		}()
+	}
 }
 
 // Stops timer and closes channel.
 func stopTimer() {
 	mu.Lock()
 	if !running {
-		fmt.Println(noTimerMessage)
+		fmt.Println(messages.NoTimer)
 		mu.Unlock()
 		return
 	}
@@ -113,92 +92,129 @@ func stopTimer() {
 	paused = false
 	mu.Unlock()
 
-	fmt.Println(stopMessage)
+	fmt.Println(messages.Stop)
+
 	fmt.Println(timer.toString())
-	previousTime = timer.seconds
+	previousTime = timer.getSec()
 	timer.reset()
 }
 
 func pauseTimer() {
 	if !running {
-		fmt.Println(noTimerMessage)
+		fmt.Println(messages.NoTimer)
 	} else if paused {
-		fmt.Println(alreadyPausedMessage)
+		fmt.Println(messages.AlreadyPaused)
 	}
+	mu.Lock()
 	paused = true
+	mu.Unlock()
 
-	select {
-	case pauseChan <- true:
-		fmt.Println(pauseMessage)
-	default:
-
-	}
-
+	pauseChan <- true
 }
 
 func resumeTimer() {
 	if !running {
-		fmt.Println(noTimerMessage)
+		fmt.Println(messages.NoTimer)
 	} else if !paused {
-		fmt.Println(notPausedMessage)
+		fmt.Println(messages.NotPaused)
 	} else {
 		pauseChan <- false
 		paused = false
-		fmt.Println(stopMessage)
+		fmt.Println(messages.Resume)
 	}
 }
 
 func revealTimer() {
 	if !running {
-		fmt.Println(noTimerMessage)
+		fmt.Println(messages.NoTimer)
 	} else {
 		fmt.Println("Timer is at: ", timer.toString())
 	}
 }
 
-func savePrompt() {
-	fmt.Println(wantToSave)
+func savePrompt() error {
+	fmt.Println(messages.WantToSave)
 	if in() == "y" {
-		fmt.Println(addingTime)
-		insertTime(previousTime)
+		fmt.Println(messages.AddTime)
+		err := insertTime(previousTime)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // Prompts users if they want to stop the timer (if its running) & save.
-func saveTimer() {
+func saveTimer() error {
 	var message string
 	var state string
 	if running {
-		message = stillRunning
+		message = messages.StillRunning
 		state = "running"
 	} else if paused {
-		message = pauseMessage
+		message = messages.Pause
 		state = "paused"
 	} else if !paused && !running {
-		savePrompt()
+		err := savePrompt()
+		if err != nil {
+			return err
+		}
 	}
-	fmt.Println(message + " " + wantToStop)
+	fmt.Println(message + " " + messages.WantToStop)
 	if in() == "y" {
 		stopTimer()
-		savePrompt()
+		err := savePrompt()
+		if err != nil {
+			return err
+		}
 	} else {
 		fmt.Println("Timer remains ", state)
 	}
+	return nil
 }
 
-func printALlTimes() {
-	for _, r := range getAllTimes() {
+func printALlTimes() error {
+	times, err := getAllTimes()
+	if err != nil {
+		return err
+	}
+	for _, r := range times {
 		rTime := MyTime{seconds: r.time}
 		fmt.Printf("Date: %s Time: %s\n", r.date, rTime.toString())
+	}
+	return nil
+}
+
+func search() {
+	for {
+		fmt.Printf("Enter date in %s format:\n", dateTemplate)
+		searchDate := in()
+		_, err := myDateFromString(searchDate)
+
+		if err != nil {
+			fmt.Println(messages.InvalidDate)
+		} else {
+			fetchedTime, err := selectTime(searchDate)
+			if err != nil {
+				fmt.Printf("%s\n%s", messages.NoSearch, messages.AnotherDate)
+				if in() != "y" {
+					break
+				}
+			} else {
+				fmt.Printf("%s: %d\n", searchDate, fetchedTime)
+				break
+			}
+		}
+
 	}
 }
 
 func main() {
 	printDebug = true
 
-	connectDatabase()
+	checkErr(connectDatabase())
 	defer database.Close()
-	createTable()
+	checkErr(createTable())
 
 	for {
 		switch in() {
@@ -213,16 +229,18 @@ func main() {
 		case "reveal":
 			revealTimer()
 		case "help":
-			fmt.Println(commandHelp)
+			fmt.Println(messages.CommandHelp)
 		case "debug":
 			printDebug = !printDebug
 			fmt.Println("Debug mode", printDebug)
 		case "save":
-			saveTimer()
+			checkErr(saveTimer())
 		case "times":
-			printALlTimes()
+			checkErr(printALlTimes())
+		case "search":
+			search()
 		default:
-			fmt.Println(invalid)
+			fmt.Println(messages.Invalid)
 		}
 	}
 }

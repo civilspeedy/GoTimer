@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
 	path   = "./database.db"
-	driver = "sqlite"
+	driver = "sqlite3"
 )
 
 const (
@@ -41,58 +41,72 @@ type TimeEntry struct {
 var database *sql.DB
 
 // Connects or creates database. Assigns values to package-wide database variable.
-func connectDatabase() {
+func connectDatabase() error {
 	defer logTime("Connect database")()
 
 	out("Connecting database")
 	db, err := sql.Open(driver, path)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = db.Ping()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	out("Database connected")
 	database = db
+	return nil
 }
 
 // Drops the table "time".
-func dropTable() {
+func dropTable() error {
 	defer logTime("Drop table")()
 	out("Dropping table")
 
 	_, err := database.Exec(drop)
-	checkErr(err)
 	out("Table Dropped")
+	return err
 }
 
 // Create the table "time"
-func createTable() {
+func createTable() error {
 	defer logTime("Create table")()
 	out("Creating table")
 	_, err := database.Exec(create)
-	checkErr(err)
 	out("Table created")
+
+	return err
 }
 
 // Returns all entries in "time" as TimeEntry slice.
-func getAllTimes() []TimeEntry {
+func getAllTimes() ([]TimeEntry, error) {
 	defer logTime("Get all times")()
 	out("Fecthing all times")
 
 	rows, err := database.Query(selectAll)
-	checkErr(err)
+	if err != nil {
+		return nil, err
+	}
 
 	var rowSlice []TimeEntry
 	for rows.Next() {
 		var r TimeEntry
-		rows.Scan(&r.id, &r.date, &r.time)
+		err = rows.Scan(&r.id, &r.date, &r.time)
+		if err != nil {
+			return nil, err
+		}
 		rowSlice = append(rowSlice, r)
 	}
 
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
 	out("Fetched all times")
-	return rowSlice
+	return rowSlice, nil
 }
 
 // Using a formatted date string the total seconds of a recorded time is returned for that specific date.
@@ -101,7 +115,9 @@ func selectTime(dateStr string) (uint, error) {
 	out("Fetching time")
 
 	rows, err := database.Query(selectWhereDate, dateStr)
-	checkErr(err)
+	if err != nil {
+		return 0, err
+	}
 
 	defer rows.Close()
 
@@ -111,7 +127,9 @@ func selectTime(dateStr string) (uint, error) {
 
 	var row uint
 	err = rows.Scan(&row)
-	checkErr(err)
+	if err != nil {
+		return row, err
+	}
 
 	out("Time fetched")
 
@@ -119,7 +137,7 @@ func selectTime(dateStr string) (uint, error) {
 }
 
 // Either updates or inserts passed seconds value in database.
-func insertTime(recordedTime uint) {
+func insertTime(recordedTime uint) error {
 	defer logTime("Insert time")()
 	out("Inserting time")
 	date := newMyDate(time.Now())
@@ -130,12 +148,17 @@ func insertTime(recordedTime uint) {
 	if err != nil {
 		out("Inserting new record")
 		_, err = database.Exec(insertWhereDate, dateStr, recordedTime)
-		checkErr(err)
+		if err != nil {
+			return err
+		}
 		out("Inserted new record")
 	} else {
 		out("Updating previous record")
 		_, err = database.Exec(updateWhereDate, dateStr, previousTime+recordedTime)
-		checkErr(err)
+		if err != nil {
+			return err
+		}
 		out("Updated previous record")
 	}
+	return nil
 }

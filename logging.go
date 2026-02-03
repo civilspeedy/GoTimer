@@ -35,5 +35,5 @@ func logTime(label string) func() {
 			color.Cyan("TIME: %s in %.3fms\n", label, float64(time.Since(start).Nanoseconds())/1e6)
 		}
 	}
-	return nil
+	return func() {}
 }
