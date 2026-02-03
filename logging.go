@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"runtime"
 	"runtime/debug"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 )
 
 // Whether debug mode is enabled or not. out() & logTime() will not print if this is false.
-var printDebug bool
+var printDebug = true
 
 // Basic logging output for debugging messages.
 func out(msg string) {
@@ -21,8 +22,9 @@ func out(msg string) {
 // Checks if an error is nil and throws fatal if not. Will always be called regardless of debuging mode on or off.
 func checkErr(err error) {
 	if err != nil {
-		color.Red("Fatal Error:")
-		log.Fatalln(err)
+		_, filename, line, _ := runtime.Caller(1)
+		color.Red("Error[%s:%d]:", filename, line)
+		log.Panic(err)
 		debug.PrintStack()
 	}
 }

@@ -187,7 +187,7 @@ func insertTime(recordedTime uint) error {
 		out("Inserted new record")
 	} else {
 		out("Updating previous record")
-		_, err = database.Exec(sqlTime.Update, dateStr, previousTime+recordedTime)
+		_, err = database.Exec(sqlTime.Update, dateStr, previousTime+recordedTime) // not working
 		if err != nil {
 			return err
 		}

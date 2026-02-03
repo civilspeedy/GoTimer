@@ -160,16 +160,17 @@ func saveTimer() error {
 		if err != nil {
 			return err
 		}
-	}
-	fmt.Println(message + " " + messages.WantToStop)
-	if in() == "y" {
-		stopTimer()
-		err := savePrompt()
-		if err != nil {
-			return err
-		}
 	} else {
-		fmt.Println("Timer remains ", state)
+		fmt.Println(message + " " + messages.WantToStop)
+		if in() == "y" {
+			stopTimer()
+			err := savePrompt()
+			if err != nil {
+				return err
+			}
+		} else {
+			fmt.Println("Timer remains ", state)
+		}
 	}
 	return nil
 }
@@ -211,9 +212,9 @@ func search() {
 }
 
 func main() {
-	printDebug = true
-
 	checkErr(connectDatabase())
+	printDebug, err := checkDebugMode()
+	checkErr(err)
 	defer database.Close()
 	checkErr(createTable())
 
@@ -234,6 +235,7 @@ func main() {
 		case "debug":
 			printDebug = !printDebug
 			fmt.Println("Debug mode", printDebug)
+			checkErr(updateDebugMode(printDebug))
 		case "save":
 			checkErr(saveTimer())
 		case "times":
