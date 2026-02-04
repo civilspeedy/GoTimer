@@ -10,7 +10,7 @@ import (
 )
 
 // Whether debug mode is enabled or not. out() & logTime() will not print if this is false.
-var printDebug = true
+var printDebug = false
 
 // Basic logging output for debugging messages.
 func out(msg string) {
