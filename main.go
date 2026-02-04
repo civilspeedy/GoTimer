@@ -245,7 +245,7 @@ func main() {
 		case "reveal":
 			revealTimer()
 		case "help":
-			fmt.Println(messages.CommandHelp)
+			fmt.Printf(messages.CommandHelp)
 		case "debug":
 			printDebug = !printDebug
 			fmt.Println("Debug mode", printDebug)

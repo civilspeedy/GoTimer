@@ -31,12 +31,13 @@ const (
 
 // Lists what each command does.
 const CommandHelp = `
-	start - Starts timer
-	stop - Stops timer & prints final time
-	pause - Pauses timer
-	resume - Resumes timer after pausing
-	reveal - shows current time
-	search - search for specific time
-	times - prints all stored times
-	debug - toggle debug mode
-	`
+start - Starts timer
+stop - Stops timer & prints final time
+pause - Pauses timer
+resume - Resumes timer after pausing
+reveal - shows current time
+search - search for specific time
+times - prints all stored times
+export - export stored times to CSV file
+debug - toggle debug mode
+`
