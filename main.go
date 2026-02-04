@@ -109,7 +109,7 @@ func pauseTimer() {
 	mu.Lock()
 	paused = true
 	mu.Unlock()
-
+	fmt.Println(messages.Pause)
 	pauseChan <- true
 }
 
@@ -207,8 +207,22 @@ func search() {
 				break
 			}
 		}
-
 	}
+}
+
+func export() error {
+	times, err := getAllTimes()
+	if err != nil {
+		return err
+	}
+
+	var records []TimeEntry
+	for _, r := range times {
+		records = append(records, r)
+	}
+
+	err = writeToCSV(records)
+	return err
 }
 
 func main() {
@@ -242,6 +256,8 @@ func main() {
 			checkErr(printALlTimes())
 		case "search":
 			search()
+		case "export":
+			checkErr(export())
 		case "exit":
 			os.Exit(0)
 		default:
