@@ -15,8 +15,8 @@ While studying for my CompTIA certifications, it became a nuisance setting up a 
 
 ## External Packages
 
-- [Color](github.com/fatih/color)
-- [Sqlite3](github.com/mattn/go-sqlite3)
+- [Color](https://github.com/fatih/color)
+- [Sqlite3](https://github.com/mattn/go-sqlite3)
 
 ## Usages
 
