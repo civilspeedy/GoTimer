@@ -114,7 +114,7 @@ func createTable() error {
 // Returns all entries in "time" as TimeEntry slice.
 func getAllTimes() ([]TimeEntry, error) {
 	defer logTime("Get all times")()
-	out("Fecthing all times")
+	out("Fetching all times")
 
 	rows, err := database.Query(sqlTime.SelectAll)
 	if err != nil {

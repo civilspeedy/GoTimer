@@ -24,3 +24,9 @@ While studying for my CompTIA certifications, it became a nuisance setting up a 
 2. `start` to start the timer
 3. `stop` to stop the timer
 4. `help` to view other commands
+
+## Future
+
+- [ ] Count-down timer
+- [ ] Unit tests (database need proper testing)
+- [ ] Live display

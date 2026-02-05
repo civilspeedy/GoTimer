@@ -27,6 +27,13 @@ const (
 	WantToStop  = "Do you want to stop? (y/n)"
 	WantToSave  = "Do you want to save time? (y/n)"
 	AnotherDate = "Try another date? (y/n)"
+	Countdown   = "Enter length of counter timer as hr:min:sec or in total seconds"
+)
+
+// misc
+const (
+	ClearPrevious = "\033[1A\033[2K"
+	ClearAll      = "\033[H\033[2J"
 )
 
 // Lists what each command does.
@@ -35,9 +42,11 @@ start - Starts timer
 stop - Stops timer & prints final time
 pause - Pauses timer
 resume - Resumes timer after pausing
+countdown - starts countdown timer
 reveal - shows current time
 search - search for specific time
 times - prints all stored times
 export - export stored times to CSV file
+clear - Clear view
 debug - toggle debug mode
 `

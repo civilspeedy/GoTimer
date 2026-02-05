@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -27,6 +28,8 @@ var (
 
 	// Whether the timer is paused.
 	paused = false
+
+	countDown = false
 )
 
 // Scans text input and returns string value.
@@ -36,47 +39,53 @@ func in() string {
 	return strings.ToLower(input)
 }
 
-// Starts timer as a seperate go routine.
+func tick() {
+	ticker := time.NewTicker(tickerLength)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			mu.RLock()
+			isPaused := paused
+			mu.RUnlock()
+
+			if !isPaused {
+				if !countDown {
+					timer.inc()
+				} else {
+					timer.dec()
+				}
+			}
+		case p := <-pauseChan:
+			mu.Lock()
+			paused = p
+			mu.Unlock()
+		case <-stopChan:
+			return
+		}
+	}
+}
+
 func startTimer() {
 	mu.Lock()
+	defer mu.Unlock()
+
 	if running {
 		if paused {
 			fmt.Println(messages.PausedCantStart)
 		} else {
 			fmt.Println(messages.AlreadyStarted)
 		}
-		mu.Unlock()
-	} else {
-		fmt.Println(messages.Start)
-
-		running = true
-		paused = false
-		stopChan = make(chan struct{})
-		mu.Unlock()
-
-		go func() {
-			ticker := time.NewTicker(tickerLength)
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-ticker.C:
-					mu.RLock()
-					isPaused := paused
-					mu.RUnlock()
-					if !isPaused {
-						timer.inc()
-					}
-				case p := <-pauseChan:
-					mu.Lock()
-					paused = p
-					mu.Unlock()
-				case <-stopChan:
-					return
-				}
-			}
-		}()
+		return
 	}
+
+	fmt.Println(messages.Start)
+	running = true
+	paused = false
+	stopChan = make(chan struct{})
+
+	go tick()
 }
 
 // Stops timer and closes channel.
@@ -225,6 +234,32 @@ func export() error {
 	return err
 }
 
+func startCountdown() error {
+
+	fmt.Println(messages.Countdown)
+	input := in()
+
+	var duration MyTime
+	if strings.Contains(input, ":") {
+		err := duration.fromString(input)
+		if err != nil {
+			return err
+		}
+	} else {
+		convertedInput, err := strconv.Atoi(input)
+		if err != nil {
+			return err
+		}
+		duration.seconds = uint(convertedInput)
+	}
+
+	countDown = true
+
+	startTimer()
+
+	return nil
+}
+
 func main() {
 	checkErr(connectDatabase())
 	printDebug, err := checkDebugMode()
@@ -258,6 +293,10 @@ func main() {
 			search()
 		case "export":
 			checkErr(export())
+		case "clear":
+			fmt.Println(messages.ClearAll)
+		case "countdown":
+			checkErr(startCountdown())
 		case "exit":
 			os.Exit(0)
 		default:
