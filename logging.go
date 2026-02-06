@@ -3,38 +3,57 @@ package main
 import (
 	"log"
 	"runtime"
-	"runtime/debug"
 	"time"
 
 	"github.com/fatih/color"
 )
 
 // Whether debug mode is enabled or not. out() & logTime() will not print if this is false.
-var printDebug = false
+var debugMode = true
+
+type Stack struct {
+	fileName string
+	funcName string
+	line     int
+}
+
+// Retruns stucture containing function details. This is costly and should not be called outside of debug mode or errors.
+func trace(skip int) *Stack {
+	pc, file, line, ok := runtime.Caller(skip)
+	if !ok {
+		log.Fatalln("Unable to read stack")
+		return nil
+	}
+
+	funcDetails := runtime.FuncForPC(pc)
+
+	return &Stack{
+		fileName: file,
+		funcName: funcDetails.Name(),
+		line:     line,
+	}
+
+}
 
 // Basic logging output for debugging messages.
 func out(msg string) {
-	if printDebug {
+	if debugMode {
 		color.Green("LOG:%s\n", msg)
 	}
 }
 
-// Checks if an error is nil and throws fatal if not. Will always be called regardless of debuging mode on or off.
-func checkErr(err error) {
-	if err != nil {
-		_, filename, line, _ := runtime.Caller(1)
-		color.Red("Error[%s:%d]:", filename, line)
-		log.Panic(err)
-		debug.PrintStack()
-	}
+func errOut(err error, stack *Stack) {
+	log.Fatalf("Error in file:%s func:%s line: %d\n%s\n", stack.fileName, stack.funcName, stack.line, err)
 }
 
 // Messures and logs the execution time of a function in miliseconds.
-func logTime(label string) func() {
-	if printDebug {
+func logTime() func() {
+	if debugMode {
+		stack := trace(2)
+
 		start := time.Now()
 		return func() {
-			color.Cyan("TIME: %s in %.3fms\n", label, float64(time.Since(start).Nanoseconds())/1e6)
+			color.Cyan("%s:%.3fms\n", stack.funcName, float64(time.Since(start).Nanoseconds())/1e6)
 		}
 	}
 	return func() {}
