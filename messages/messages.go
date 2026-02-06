@@ -20,6 +20,7 @@ const (
 	StillRunning    = "Timer still running"
 	InvalidDate     = "Invalid date format, please try again."
 	NoSearch        = "Unable to find entry with provided date."
+	BigInput        = "Input too large."
 )
 
 // Prompts

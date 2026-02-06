@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -33,10 +34,27 @@ var (
 )
 
 // Scans text input and returns string value.
-func in() string {
+func in() (string, error) {
+	defer logTime("Input")()
+	out("Getting user input")
+	defer out("Got user input")
+
 	var input string
-	fmt.Scanln(&input)
-	return strings.ToLower(input)
+	var err error
+	for {
+		reader := bufio.NewReader(os.Stdin)
+		input, err = reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
+		if len(input) <= 32 {
+			break
+		} else {
+			fmt.Println(messages.BigInput)
+		}
+	}
+	input = strings.Trim(input, "\n")
+	return strings.ToLower(input), nil
 }
 
 func tick() {
@@ -144,7 +162,12 @@ func revealTimer() {
 
 func savePrompt() error {
 	fmt.Println(messages.WantToSave)
-	if in() == "y" {
+	input, err := in()
+	if err != nil {
+		return err
+	}
+
+	if input == "y" {
 		fmt.Println(messages.AddTime)
 		err := insertTime(previousTime)
 		if err != nil {
@@ -171,7 +194,11 @@ func saveTimer() error {
 		}
 	} else {
 		fmt.Println(message + " " + messages.WantToStop)
-		if in() == "y" {
+		input, err := in()
+		if err != nil {
+			return err
+		}
+		if input == "y" {
 			stopTimer()
 			err := savePrompt()
 			if err != nil {
@@ -196,19 +223,26 @@ func printALlTimes() error {
 	return nil
 }
 
-func search() {
+func search() error {
 	for {
 		fmt.Printf("Enter date in %s format:\n", dateTemplate)
-		searchDate := in()
-		_, err := myDateFromString(searchDate)
+		searchDate, err := in()
+		if err != nil {
+			return err
+		}
 
+		_, err = myDateFromString(searchDate)
 		if err != nil {
 			fmt.Println(messages.InvalidDate)
 		} else {
 			fetchedTime, err := selectTime(searchDate)
 			if err != nil {
 				fmt.Printf("%s\n%s", messages.NoSearch, messages.AnotherDate)
-				if in() != "y" {
+				input, err := in()
+				if err != nil {
+					return err
+				}
+				if input != "y" {
 					break
 				}
 			} else {
@@ -217,6 +251,8 @@ func search() {
 			}
 		}
 	}
+
+	return nil
 }
 
 func export() error {
@@ -237,7 +273,10 @@ func export() error {
 func startCountdown() error {
 
 	fmt.Println(messages.Countdown)
-	input := in()
+	input, err := in()
+	if err != nil {
+		return err
+	}
 
 	var duration MyTime
 	if strings.Contains(input, ":") {
@@ -268,7 +307,10 @@ func main() {
 	checkErr(createTable())
 
 	for {
-		switch in() {
+
+		input, err := in()
+		checkErr(err)
+		switch input {
 		case "start":
 			startTimer()
 		case "stop":
@@ -300,7 +342,7 @@ func main() {
 		case "exit":
 			os.Exit(0)
 		default:
-			fmt.Println(messages.Invalid)
+			fmt.Printf("'%s' %s\n", input, messages.Invalid)
 		}
 	}
 }
