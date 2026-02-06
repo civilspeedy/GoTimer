@@ -15,11 +15,12 @@ const (
 
 var (
 	ticker    = time.NewTicker(tickerLength)
-	seconds   uint
 	stopChan  chan struct{}
 	pauseChan = make(chan bool, 1)
 	mu        sync.RWMutex
 	paused    bool
+	seconds   uint
+	date      int64
 )
 
 const (
@@ -28,8 +29,6 @@ const (
 )
 
 func secToStr(sec uint) string {
-	mu.Lock()
-	defer mu.Unlock()
 	defer logTime()()
 
 	hours := sec / secInHr
@@ -37,6 +36,13 @@ func secToStr(sec uint) string {
 	theSeconds := sec % secInMin
 
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, theSeconds)
+}
+
+func dateToStr(date int64) string {
+	defer logTime()()
+
+	dateTime := time.Unix(date, 0)
+	return fmt.Sprintf("%d/%d/%d", dateTime.Day(), dateTime.Month(), dateTime.Year())
 }
 
 func tick() {
@@ -78,6 +84,8 @@ func start() {
 
 func main() {
 	start()
+
+	date = time.Now().Unix()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
