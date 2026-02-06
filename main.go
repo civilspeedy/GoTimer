@@ -53,6 +53,8 @@ func in() (string, error) {
 			fmt.Println(messages.BigInput)
 		}
 	}
+
+	fmt.Println(messages.ClearPrevious)
 	input = strings.Trim(input, "\n")
 	return strings.ToLower(input), nil
 }
@@ -307,7 +309,6 @@ func main() {
 	checkErr(createTable())
 
 	for {
-
 		input, err := in()
 		checkErr(err)
 		switch input {
