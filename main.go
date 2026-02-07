@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"time"
 )
@@ -80,6 +82,28 @@ func start() {
 	stopChan = make(chan struct{})
 
 	go tick()
+}
+
+func in() string {
+	var userVal string
+	for {
+		scanner := bufio.NewReader(os.Stdin)
+		input, err := scanner.ReadString('\n')
+		if err != nil {
+			tr := trace(2)
+			errOut(err, tr)
+		}
+
+		inLen := len(input)
+		if inLen == 0 || inLen < 32 {
+			fmt.Println("Invalid input")
+		} else {
+			userVal = strings.Trim(strings.ToLower(input), "\n")
+			break
+		}
+	}
+
+	return userVal
 }
 
 func main() {
