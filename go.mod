@@ -2,8 +2,6 @@ module timer
 
 go 1.25.5
 
-require github.com/mattn/go-sqlite3 v1.14.33
-
 require (
 	github.com/fatih/color v1.18.0 // direct
 	github.com/mattn/go-colorable v0.1.13 // indirect

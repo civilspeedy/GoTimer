@@ -2,11 +2,8 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
-	"os/signal"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -15,104 +12,42 @@ const (
 	dateTemplate string        = "dd/mm/yyyy"
 )
 
-var (
-	ticker    = time.NewTicker(tickerLength)
-	stopChan  chan struct{}
-	pauseChan = make(chan bool, 1)
-	mu        sync.RWMutex
-	paused    bool
-	seconds   uint
-	date      int64
-)
+var date int64
 
 const (
 	secInHr  uint = 3600
 	secInMin uint = 60
 )
 
-func secToStr(sec uint) string {
-	defer logTime()()
-
-	hours := sec / secInHr
-	minutes := (sec % secInHr) / secInMin
-	theSeconds := sec % secInMin
-
-	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, theSeconds)
-}
-
-func dateToStr(date int64) string {
-	defer logTime()()
-
-	dateTime := time.Unix(date, 0)
-	return fmt.Sprintf("%d/%d/%d", dateTime.Day(), dateTime.Month(), dateTime.Year())
-}
-
-func tick() {
-	ticker := time.NewTicker(tickerLength)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			mu.RLock()
-			isPaused := paused
-			mu.RUnlock()
-			if !isPaused {
-				mu.Lock()
-				seconds++
-				fmt.Println(seconds)
-				mu.Unlock()
-			}
-		case p := <-pauseChan:
-			mu.Lock()
-			paused = !p
-			mu.Unlock()
-		case <-stopChan:
-			return
-		}
-	}
-}
-
-func start() {
-	mu.Lock()
-	defer mu.Unlock()
-	defer logTime()()
-
-	paused = false
-	stopChan = make(chan struct{})
-
-	go tick()
-}
-
 func in() string {
-	var userVal string
+	scanner := bufio.NewReader(os.Stdin)
 	for {
-		scanner := bufio.NewReader(os.Stdin)
 		input, err := scanner.ReadString('\n')
 		if err != nil {
 			tr := trace(2)
 			errOut(err, tr)
 		}
-
 		inLen := len(input)
-		if inLen == 0 || inLen < 32 {
-			fmt.Println("Invalid input")
+		if inLen == 0 || inLen > 32 {
+			message(invalid)
 		} else {
-			userVal = strings.Trim(strings.ToLower(input), "\n")
-			break
+			val := strings.Trim(strings.ToLower(input), "\n")
+			return val
 		}
 	}
-
-	return userVal
 }
 
 func main() {
-	start()
-
 	date = time.Now().Unix()
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	<-c
+	for {
+		switch in() {
+		case "start":
+			start()
+		case "stop":
+			stop()
+		case "exit":
+			os.Exit(0)
+		}
+	}
 }
