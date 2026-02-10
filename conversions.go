@@ -5,14 +5,18 @@ import (
 	"time"
 )
 
+const (
+	secInHr  uint = 3600
+	secInMin uint = 60
+)
+
 func secToStr(sec uint) string {
 	defer logTime()()
-
-	hours := sec / secInHr
-	minutes := (sec % secInHr) / secInMin
-	theSeconds := sec % secInMin
-
-	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, theSeconds)
+	return fmt.Sprintf("%02d:%02d:%02d",
+		sec/secInHr,            // hours
+		(sec%secInHr)/secInMin, // minutes
+		sec%secInMin,           // seconds
+	)
 }
 
 func dateToStr(date int64) string {

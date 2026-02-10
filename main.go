@@ -14,11 +14,6 @@ const (
 
 var date int64
 
-const (
-	secInHr  uint = 3600
-	secInMin uint = 60
-)
-
 func in() string {
 	scanner := bufio.NewReader(os.Stdin)
 	for {
@@ -44,6 +39,10 @@ func main() {
 		switch in() {
 		case "start":
 			start()
+		case "pause":
+			pause()
+		case "resume":
+			resume()
 		case "stop":
 			stop()
 		case "exit":

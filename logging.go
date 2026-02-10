@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"runtime"
 	"time"
@@ -57,4 +58,18 @@ func logTime() func() {
 		}
 	}
 	return func() {}
+}
+
+// Prints error if function called inside has a runtime longer that provided time in seconds.
+func checkTime(maxTime float64) func() {
+	start := time.Now()
+
+	return func() {
+		runDuration := float64(time.Since(start).Nanoseconds()) / 1e6
+		if runDuration >= maxTime*1000 {
+			t := trace(3)
+			err := errors.New("Function runtime took too long!")
+			errOut(err, t)
+		}
+	}
 }

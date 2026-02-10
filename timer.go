@@ -29,17 +29,18 @@ func tick() {
 			if !isPaused {
 				mu.Lock()
 				seconds++
-				fmt.Println(seconds)
 				mu.Unlock()
+				fmt.Printf("\033[s\033[1;1H\033[KTimer: %ss\033[u", secToStr(seconds))
 			}
 		case p := <-pauseChan:
 			mu.Lock()
-			paused = !p
+			paused = p
 			mu.Unlock()
 		case <-stopChan:
 			return
 		}
 	}
+
 }
 
 func start() {
@@ -68,4 +69,30 @@ func stop() {
 	close(stopChan)
 
 	seconds = 0
+}
+
+func pause() {
+	if !running {
+		message(noRun)
+	} else if paused {
+		fmt.Println(alPause)
+	}
+
+	mu.Lock()
+	paused = true
+	mu.Unlock()
+	message(nowPaused)
+	pauseChan <- true
+}
+
+func resume() {
+	if !running {
+		fmt.Println(noRun)
+	} else if !paused {
+		message(noPause)
+	} else {
+		pauseChan <- false
+		paused = false
+		message(resumed)
+	}
 }
