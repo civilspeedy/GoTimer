@@ -34,7 +34,9 @@ func in() string {
 
 func main() {
 	date = time.Now().Unix()
+	connect()
 
+	defer db.Close()
 	for {
 		switch in() {
 		case "start":
