@@ -32,11 +32,26 @@ func in() string {
 	}
 }
 
+func save(date int64) error {
+	if running {
+		message(toStop)
+		if in() == "y" {
+			stop()
+		}
+		return nil
+	}
+
+	message(saveQuest)
+	if in() == "y" {
+
+	}
+
+	return nil
+}
+
 func main() {
 	date = time.Now().Unix()
-	connect()
 
-	defer db.Close()
 	for {
 		switch in() {
 		case "start":

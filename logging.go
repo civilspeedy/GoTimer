@@ -73,3 +73,8 @@ func checkTime(maxTime float64) func() {
 		}
 	}
 }
+
+type ErrStack struct {
+	err   error
+	stack *Stack
+}

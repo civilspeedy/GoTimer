@@ -1,101 +1,34 @@
 package main
 
 import (
-	"fmt"
-	"time"
+	"database/sql"
 
-	bolt "go.etcd.io/bbolt"
-)
-
-var (
-	db         *bolt.DB
-	bucketName = []byte("recorded_times")
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	fileName = "store.db"
+	fileName = "./store.db"
+	driver   = ""
 )
 
-func connect() {
+var (
+	db *sql.DB
+)
+
+func connect() *ErrStack {
 	defer logTime()()
 
-	var err error
-	db, err = bolt.Open(fileName, 0600, &bolt.Options{Timeout: 1 * time.Second})
+	db, err := sql.Open(driver, fileName)
 	if err != nil {
-		t := trace(2)
-		errOut(err, t)
+		return &ErrStack{
+			err:   err,
+			stack: trace(2),
+		}
 	}
 
-	var t *Stack
-	err = db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(bucketName)
-		if b == nil {
-			_, err := tx.CreateBucket(bucketName)
-			if err != nil {
-				t = trace(2)
-				return err
-			}
-		}
-
-		return nil
-	})
-
+	err = db.Ping()
 	if err != nil {
-		errOut(err, t)
+		return
 	}
-}
-
-func checkBucket(tx *bolt.Tx) (*bolt.Bucket, error) {
-	b := tx.Bucket(bucketName)
-	if b == nil {
-		return nil, fmt.Errorf("No bucket found: %s", bucketName)
-	} else {
-		return b, nil
-	}
-}
-
-func addEntry(key string, value string) {
-	defer logTime()()
-
-	var s *Stack
-	err := db.Update(func(tx *bolt.Tx) error {
-		b, err := checkBucket(tx)
-		if err != nil {
-			s = trace(2)
-			return err
-		}
-		err = b.Put([]byte(key), []byte(value))
-		if err != nil {
-			s = trace(2)
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		errOut(err, s)
-	}
-}
-
-func getEntry(key string) string {
-	defer logTime()()
-	var s *Stack
-	var value []byte
-
-	err := db.View(func(tx *bolt.Tx) error {
-		b, err := checkBucket(tx)
-		if err != nil {
-			s = trace(2)
-			return err
-		}
-
-		value = b.Get([]byte(key))
-		return nil
-	})
-	if err != nil {
-		errOut(err, s)
-	}
-
-	return string(value)
+	return nil
 }

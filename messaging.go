@@ -16,6 +16,8 @@ const (
 	alPause
 	noPause
 	resumed
+	toStop
+	saveQuest
 )
 
 func message(m msg) {
@@ -39,6 +41,10 @@ func message(m msg) {
 		toPrint = "Timer not paused."
 	case resumed:
 		toPrint = "Timer resumed."
+	case toStop:
+		toPrint = "Timer is running, want to stop? (y/n)"
+	case saveQuest:
+		toPrint = "Would you like to save timer? (y/n)"
 	default:
 		t := trace(2)
 		err := errors.New("No matching message!")
