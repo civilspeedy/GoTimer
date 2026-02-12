@@ -2,10 +2,11 @@ package main
 
 import (
 	"bufio"
+	"log"
 	"os"
 	"strings"
 	"time"
-	dt "timer/debugTools"
+	d "timer/debug"
 )
 
 const (
@@ -13,47 +14,79 @@ const (
 	dateTemplate string        = "dd/mm/yyyy"
 )
 
-var date int64
+var date uint
 
-func in() string {
+func in() (string, error) {
+	defer d.MarkFunc()
 	scanner := bufio.NewReader(os.Stdin)
 	for {
 		input, err := scanner.ReadString('\n')
 		if err != nil {
-			dt.ErrOut(dt.NewTE(err))
+			return "", d.CreateErr(err)
 		}
 		inLen := len(input)
 		if inLen == 0 || inLen > 32 {
 			message(invalid)
+
 		} else {
 			val := strings.Trim(strings.ToLower(input), "\n")
-			return val
+			return val, nil
 		}
 	}
 }
 
-func save(date int64) error {
+func save() error {
+	defer d.MarkFunc()
 	if running {
 		message(toStop)
-		if in() == "y" {
+
+		input, err := in()
+		if err != nil {
+			return err
+		}
+		if input == "y" {
 			stop()
 		}
 		return nil
 	}
-
 	message(saveQuest)
-	if in() == "y" {
 
+	input, err := in()
+	if err != nil {
+		return err
+	}
+
+	if input == "y" {
+		fetchedPrevious, err := slct(date)
+		if err != nil {
+			return err
+		}
+
+		if fetchedPrevious == nil {
+			err = insert()
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
 func main() {
-	date = time.Now().Unix()
+	err := connect()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer db.Close()
+	date = uint(time.Now().Unix())
 
 	for {
-		switch in() {
+		input, err := in()
+		if err != nil {
+			log.Fatalln(err)
+		}
+		switch input {
 		case "start":
 			start()
 		case "pause":

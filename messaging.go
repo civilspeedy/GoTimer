@@ -1,9 +1,8 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	dt "timer/debugTools"
+	d "timer/debug"
 )
 
 type msg = byte
@@ -19,38 +18,26 @@ const (
 	resumed
 	toStop
 	saveQuest
+	added
+	updated
 )
 
-func message(m msg) *dt.TracableError {
-	defer dt.LogTime()()
-	var toPrint string
+var msgMap = map[msg]string{
+	invalid:   "Invalid input!",
+	noRun:     "Timer not running!",
+	started:   "Timer started.",
+	stopped:   "Timer stopped.",
+	nowPaused: "Timer paused.",
+	alPause:   "Timer already paused.",
+	noPause:   "Timer not paused.",
+	resumed:   "Timer is running, want to stop? (y/n)",
+	toStop:    "Would you like to save timer? (y/n)",
+	saveQuest: "Would you like to save timer? (y/n)",
+	added:     "Added new entry.",
+	updated:   "Updated existing entry.",
+}
 
-	switch m {
-	case invalid:
-		toPrint = "Invalid input!"
-	case noRun:
-		toPrint = "Timer not running!"
-	case started:
-		toPrint = "Timer started."
-	case stopped:
-		toPrint = "Timer stopped."
-	case nowPaused:
-		toPrint = "Timer paused."
-	case alPause:
-		toPrint = "Timer already paused."
-	case noPause:
-		toPrint = "Timer not paused."
-	case resumed:
-		toPrint = "Timer resumed."
-	case toStop:
-		toPrint = "Timer is running, want to stop? (y/n)"
-	case saveQuest:
-		toPrint = "Would you like to save timer? (y/n)"
-	default:
-		err := errors.New("No matching message case")
-		return dt.NewTE(err)
-	}
-
-	fmt.Println(toPrint)
-	return nil
+func message(m msg) {
+	defer d.MarkFunc()
+	fmt.Println(msgMap[m])
 }

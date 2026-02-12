@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
-	dt "timer/debugTools"
+	d "timer/debug"
 )
 
 const (
@@ -12,7 +12,7 @@ const (
 )
 
 func secToStr(sec uint) string {
-	defer dt.LogTime()()
+	defer d.MarkFunc()
 	return fmt.Sprintf("%02d:%02d:%02d",
 		sec/secInHr,            // hours
 		(sec%secInHr)/secInMin, // minutes
@@ -21,7 +21,7 @@ func secToStr(sec uint) string {
 }
 
 func dateToStr(date int64) string {
-	defer dt.LogTime()()
+	defer d.MarkFunc()
 
 	dateTime := time.Unix(date, 0)
 	return fmt.Sprintf("%d/%d/%d", dateTime.Day(), dateTime.Month(), dateTime.Year())

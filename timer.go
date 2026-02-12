@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	dt "timer/debugTools"
 )
 
 var (
@@ -15,6 +14,7 @@ var (
 	running   bool
 	paused    bool
 	seconds   uint
+	previous  uint
 )
 
 func tick() {
@@ -48,7 +48,6 @@ func start() {
 	defer message(started)
 	mu.Lock()
 	defer mu.Unlock()
-	defer dt.LogTime()()
 
 	paused = false
 	running = true
@@ -69,6 +68,7 @@ func stop() {
 
 	close(stopChan)
 
+	previous = seconds
 	seconds = 0
 }
 
