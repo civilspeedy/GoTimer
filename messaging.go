@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	dt "timer/debugTools"
 )
 
 type msg = byte
@@ -20,8 +21,8 @@ const (
 	saveQuest
 )
 
-func message(m msg) {
-	defer logTime()()
+func message(m msg) *dt.TracableError {
+	defer dt.LogTime()()
 	var toPrint string
 
 	switch m {
@@ -46,10 +47,10 @@ func message(m msg) {
 	case saveQuest:
 		toPrint = "Would you like to save timer? (y/n)"
 	default:
-		t := trace(2)
-		err := errors.New("No matching message!")
-		errOut(err, t)
+		err := errors.New("No matching message case")
+		return dt.NewTE(err)
 	}
 
 	fmt.Println(toPrint)
+	return nil
 }

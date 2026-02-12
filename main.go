@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	dt "timer/debugTools"
 )
 
 const (
@@ -19,8 +20,7 @@ func in() string {
 	for {
 		input, err := scanner.ReadString('\n')
 		if err != nil {
-			tr := trace(2)
-			errOut(err, tr)
+			dt.ErrOut(dt.NewTE(err))
 		}
 		inLen := len(input)
 		if inLen == 0 || inLen > 32 {

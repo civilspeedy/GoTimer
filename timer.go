@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	dt "timer/debugTools"
 )
 
 var (
@@ -47,7 +48,7 @@ func start() {
 	defer message(started)
 	mu.Lock()
 	defer mu.Unlock()
-	defer logTime()()
+	defer dt.LogTime()()
 
 	paused = false
 	running = true
