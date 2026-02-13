@@ -20,7 +20,7 @@ func CreateErr(err error) error {
 	}
 	funcDetails := runtime.FuncForPC(pc)
 
-	return fmt.Errorf("file:%s line:%d func:%s error:\n%s\n", file, line, funcDetails.Name(), err)
+	return fmt.Errorf("file:%s line:%d func:%s error:\n%s", file, line, funcDetails.Name(), err)
 }
 
 // If debug mode is enabled will print a function's name out in order to mark logic flow.

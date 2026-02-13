@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"log"
 	d "timer/debug"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -24,6 +25,19 @@ func connect() error {
 		return d.CreateErr(err)
 	}
 	return nil
+}
+
+func closeDB() {
+	err := db.Ping()
+	if err != nil {
+		log.Fatalln(d.CreateErr(err))
+		return
+	}
+
+	err = db.Close()
+	if err != nil {
+		log.Fatalln(d.CreateErr(err))
+	}
 }
 
 func create() error {
@@ -80,7 +94,8 @@ func insert() error {
 	return nil
 }
 
-func update(changeDate bool, oldValue uint, newValue uint) error {
+// Updates existing entries. Target is a boolean of etiher 'date' or 'seconds'.
+func update(target bool, targetValue uint, newValue uint) error {
 	defer d.MarkFunc()
 
 	err := db.Ping()
@@ -88,14 +103,17 @@ func update(changeDate bool, oldValue uint, newValue uint) error {
 		return d.CreateErr(err)
 	}
 
-	var collum string
-	if changeDate {
-		collum = "date"
-	} else {
-		collum = "seconds"
+	var collumMap = map[bool]string{
+		true:  "date",
+		false: "seconds",
 	}
 
-	_, err = db.Exec("UPDATE timers SET ? = ? WHERE ? = ?;", collum, newValue, collum, oldValue)
+	_, err = db.Exec("UPDATE timers SET ? = ? WHERE ? = ?;",
+		collumMap[target],
+		newValue,
+		collumMap[!target],
+		targetValue,
+	)
 	if err != nil {
 		return d.CreateErr(err)
 	}
@@ -112,7 +130,9 @@ func slct(date uint) (*uint, error) {
 	}
 
 	rows, err := db.Query("SELECT seconds FROM timers WHERE date = ?", date)
-
+	if err != nil {
+		return nil, err
+	}
 	var sec uint
 	if !rows.Next() {
 		return nil, nil

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -57,20 +58,38 @@ func save() error {
 	}
 
 	if input == "y" {
-		fetchedPrevious, err := slct(date)
+		oldValue, err := slct(date)
 		if err != nil {
 			return err
 		}
 
-		if fetchedPrevious == nil {
+		if oldValue == nil {
 			err = insert()
 			if err != nil {
 				return err
 			}
+			message(added)
+			return nil
 		}
+		newValue := *oldValue + previous
+		err = update(false, *oldValue, newValue)
+		message(updated)
 	}
 
 	return nil
+}
+
+func delete() error {
+	defer d.MarkFunc()
+
+	fmt.Println("Enter a specific date to delete entry or 'all' to remove all entries.")
+	input, err := in()
+	if err != nil {
+		return d.CreateErr(err)
+	}
+	if input == "all" {
+
+	}
 }
 
 func main() {
@@ -78,7 +97,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	defer db.Close()
+	defer closeDB()
 	date = uint(time.Now().Unix())
 
 	for {
@@ -95,6 +114,15 @@ func main() {
 			resume()
 		case "stop":
 			stop()
+		case "save":
+			err = save()
+			if err != nil {
+				log.Fatalln(err)
+			}
+		case "delete":
+			err = delete()
+			if err != nil {
+			}
 		case "exit":
 			os.Exit(0)
 		}
