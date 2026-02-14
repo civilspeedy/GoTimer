@@ -18,7 +18,7 @@ var (
 )
 
 func tick() {
-	ticker := time.NewTicker(tickerLength)
+	ticker = time.NewTicker(tickerLength)
 	defer ticker.Stop()
 
 	for {

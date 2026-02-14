@@ -78,6 +78,22 @@ func drop() error {
 	return nil
 }
 
+func deleteSpecific(date uint) error {
+	defer d.MarkFunc()
+
+	err := db.Ping()
+	if err != nil {
+		return d.CreateErr(err)
+	}
+
+	_, err = db.Exec("DELETE FROM timers WHERE date = ?;", date)
+	if err != nil {
+		return d.CreateErr(err)
+	}
+
+	return nil
+}
+
 func insert() error {
 	defer d.MarkFunc()
 
@@ -151,4 +167,43 @@ func slct(date uint) (*uint, error) {
 	}
 
 	return &sec, nil
+}
+
+type Entry struct {
+	date    uint
+	seconds uint
+}
+
+func selectAll() ([]Entry, error) {
+	defer d.MarkFunc()
+
+	err := db.Ping()
+	if err != nil {
+		return nil, d.CreateErr(err)
+	}
+
+	rows, err := db.Query("SELECT * FROM timers;")
+	if err != nil {
+		return nil, d.CreateErr(err)
+	} else if !rows.Next() {
+		return nil, nil
+	}
+	var entries []Entry
+	for rows.Next() {
+		var dateValue uint
+		var secondsValue uint
+		err = rows.Scan(&dateValue, &secondsValue)
+		if err != nil {
+			return nil, d.CreateErr(err)
+		}
+
+		entries = append(entries, Entry{date: dateValue, seconds: secondsValue})
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return entries, nil
 }

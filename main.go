@@ -73,6 +73,9 @@ func save() error {
 		}
 		newValue := *oldValue + previous
 		err = update(false, *oldValue, newValue)
+		if err != nil {
+			return d.CreateErr(err)
+		}
 		message(updated)
 	}
 
@@ -82,14 +85,44 @@ func save() error {
 func delete() error {
 	defer d.MarkFunc()
 
-	fmt.Println("Enter a specific date to delete entry or 'all' to remove all entries.")
+	message(deletePrompt)
 	input, err := in()
 	if err != nil {
 		return d.CreateErr(err)
 	}
-	if input == "all" {
 
+	if input == "" || len(input) > 3 {
+		message(invalid)
+		return delete()
+	} else if input == "all" {
+		message(sureDeleteAll)
+		input, err = in()
+		if err != nil {
+			return d.CreateErr(err)
+		} else if input == "y" {
+			err = drop()
+			if err != nil {
+				return d.CreateErr(err)
+			}
+			message(deletedAll)
+		}
+		return nil
 	}
+
+	dateValue, err := strToDate(input)
+	if err != nil {
+		message(invalid)
+		return delete()
+	}
+
+	err = deleteSpecific(dateValue)
+	if err != nil {
+		message(deleteFailed)
+		return delete()
+	}
+
+	fmt.Printf("%s entry deleted.", input)
+	return nil
 }
 
 func main() {
@@ -97,6 +130,11 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	err = create()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	defer closeDB()
 	date = uint(time.Now().Unix())
 
@@ -116,15 +154,13 @@ func main() {
 			stop()
 		case "save":
 			err = save()
-			if err != nil {
-				log.Fatalln(err)
-			}
 		case "delete":
 			err = delete()
-			if err != nil {
-			}
 		case "exit":
 			os.Exit(0)
+		}
+		if err != nil {
+			log.Fatalln(err)
 		}
 	}
 }
