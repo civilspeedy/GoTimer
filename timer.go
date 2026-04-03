@@ -70,6 +70,7 @@ func stop() {
 
 	previous = seconds
 	seconds = 0
+	running = false
 }
 
 func pause() {

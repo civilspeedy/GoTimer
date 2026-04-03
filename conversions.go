@@ -23,10 +23,10 @@ func secToStr(sec uint) string {
 	)
 }
 
-func dateToStr(date int64) string {
+func dateToStr(date uint) string {
 	defer d.MarkFunc()
 
-	dateTime := time.Unix(date, 0)
+	dateTime := time.Unix(int64(date), 0)
 	return fmt.Sprintf("%d/%d/%d", dateTime.Day(), dateTime.Month(), dateTime.Year())
 }
 

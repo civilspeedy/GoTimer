@@ -15,7 +15,8 @@ var (
 func connect() error {
 	defer d.MarkFunc()
 
-	db, err := sql.Open("sqlite3", "./store.db")
+	var err error
+	db, err = sql.Open("sqlite3", "./store.db")
 	if err != nil {
 		return d.CreateErr(err)
 	}
@@ -150,9 +151,6 @@ func slct(date uint) (*uint, error) {
 		return nil, err
 	}
 	var sec uint
-	if !rows.Next() {
-		return nil, nil
-	}
 
 	for rows.Next() {
 		err = rows.Scan(&sec)
@@ -185,14 +183,15 @@ func selectAll() ([]Entry, error) {
 	rows, err := db.Query("SELECT * FROM timers;")
 	if err != nil {
 		return nil, d.CreateErr(err)
-	} else if !rows.Next() {
-		return nil, nil
 	}
+
 	var entries []Entry
+
 	for rows.Next() {
+		var id int
 		var dateValue uint
 		var secondsValue uint
-		err = rows.Scan(&dateValue, &secondsValue)
+		err = rows.Scan(&id, &dateValue, &secondsValue)
 		if err != nil {
 			return nil, d.CreateErr(err)
 		}

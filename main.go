@@ -125,11 +125,30 @@ func delete() error {
 	return nil
 }
 
+func printAll() error {
+	defer d.MarkFunc()
+
+	entries, err := selectAll()
+	if err != nil {
+		return d.CreateErr(err)
+	} else if len(entries) == 0 {
+		message(noEntries)
+	}
+	for index, entry := range entries {
+		printDate := dateToStr(entry.date)
+		printTime := secToStr(entry.seconds)
+		fmt.Printf("%d date:%s | time:%s\n", index+1, printDate, printTime)
+	}
+
+	return nil
+}
+
 func main() {
 	err := connect()
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	err = create()
 	if err != nil {
 		log.Fatalln(err)
@@ -156,8 +175,14 @@ func main() {
 			err = save()
 		case "delete":
 			err = delete()
+		case "list":
+			err = printAll()
 		case "exit":
 			os.Exit(0)
+		case "help":
+			message(help)
+		default:
+			message(helpPrompt)
 		}
 		if err != nil {
 			log.Fatalln(err)

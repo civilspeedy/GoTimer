@@ -26,7 +26,7 @@ func CreateErr(err error) error {
 // If debug mode is enabled will print a function's name out in order to mark logic flow.
 func MarkFunc() {
 	if DebugMode {
-		pc, _, _, ok := runtime.Caller(2)
+		pc, _, _, ok := runtime.Caller(1)
 		if !ok {
 			err := errors.New("runtime caller failure")
 			log.Fatalln(CreateErr(err))
